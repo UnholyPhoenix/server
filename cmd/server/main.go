@@ -1,15 +1,22 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
-
 	"server/pkg/calculator"
 )
 
 type apiHandler struct{}
+
+// ResultResponse has all data neded for correct response
+type ResultResponse struct {
+	Result     string
+	Expression string
+	Error      string
+}
 
 func (*apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// validate method
@@ -18,7 +25,74 @@ func (*apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Direct api calls not implemented yet.")
+	//Json response
+	w.Header().Set("Content-Type", "application/json")
+
+	n1 := r.URL.Query().Get("n1")
+	n2 := r.URL.Query().Get("n2")
+	operation := r.URL.Query().Get("operation")
+	calculatedRes := ""
+	result := ResultResponse{}
+
+	if operation == "add" {
+		calculatedRes = calculator.Calculate(n1 + " + " + n2)
+		result.Result = calculatedRes
+		result.Expression = n1 + " + " + n2
+
+		res, err := json.Marshal(result)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Fprintf(w, string(res))
+	} else if operation == "substract" {
+		calculatedRes = calculator.Calculate(n1 + " - " + n2)
+		result.Result = calculatedRes
+		result.Expression = n1 + " - " + n2
+
+		res, err := json.Marshal(result)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Fprintf(w, string(res))
+	} else if operation == "divide" {
+		calculatedRes = calculator.Calculate(n1 + " / " + n2)
+		result.Result = calculatedRes
+		result.Expression = n1 + " / " + n2
+
+		res, err := json.Marshal(result)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Fprintf(w, string(res))
+	} else if operation == "multiply" {
+		calculatedRes = calculator.Calculate(n1 + " * " + n2)
+		result.Result = calculatedRes
+		result.Expression = n1 + " * " + n2
+
+		res, err := json.Marshal(result)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Fprintf(w, string(res))
+	} else {
+		result.Error = "Invalid operator"
+
+		res, err := json.Marshal(result)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Fprintf(w, string(res))
+	}
 }
 
 func htmlHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +121,7 @@ func htmlHandler(w http.ResponseWriter, r *http.Request) {
 					<p>Allowed operators are '+', '-', '*' and '/'"</p>
 					<p>Syntax: number operator number</p>
 					<p>Examples: "5 + 5", "5 - 5", "5 * 5" and "5 / 5" </p>
-					<input name="expression" value={{ .Expr }} required>
+					<input name="expression" value="{{ if .Expr }} {{ .Expr }} {{ end }}" type="text" required>
 					<input type="submit" value="Calculate">
 				</form>
 				{{ if .Result }}<h4>Result: {{ .Result }}</h4>{{ end }}

@@ -1,188 +1,31 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"html/template"
 	"net/http"
 	"server/pkg/calculator"
 )
 
-type apiHandler struct{}
-
-// ResultResponse has all data neded for correct response
-type ResultResponse struct {
-	Result     string
-	Expression string
-	Error      string
-}
-
-func (*apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// validate method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	//Json response
-	w.Header().Set("Content-Type", "application/json")
-
-	n1 := r.URL.Query().Get("n1")
-	n2 := r.URL.Query().Get("n2")
-	operation := r.URL.Query().Get("operation")
-	calculatedRes := ""
-	result := ResultResponse{}
-
-	if operation == "add" {
-		calculatedRes = calculator.Calculate(n1 + " + " + n2)
-		result.Result = calculatedRes
-		result.Expression = n1 + " + " + n2
-
-		res, err := json.Marshal(result)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Fprintf(w, string(res))
-	} else if operation == "substract" {
-		calculatedRes = calculator.Calculate(n1 + " - " + n2)
-		result.Result = calculatedRes
-		result.Expression = n1 + " - " + n2
-
-		res, err := json.Marshal(result)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Fprintf(w, string(res))
-	} else if operation == "divide" {
-		calculatedRes = calculator.Calculate(n1 + " / " + n2)
-		result.Result = calculatedRes
-		result.Expression = n1 + " / " + n2
-
-		res, err := json.Marshal(result)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Fprintf(w, string(res))
-	} else if operation == "multiply" {
-		calculatedRes = calculator.Calculate(n1 + " * " + n2)
-		result.Result = calculatedRes
-		result.Expression = n1 + " * " + n2
-
-		res, err := json.Marshal(result)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Fprintf(w, string(res))
-	} else {
-		result.Error = "Invalid operator"
-
-		res, err := json.Marshal(result)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Fprintf(w, string(res))
-	}
-}
-
-func htmlHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := `
-		<!doctype html>
-		
-		<html lang="en">
-		<head>
-		<meta charset="utf-8">
-		
-		<title>Calculator</title>
-		<meta name="description" content="Calculator">
-		<meta name="author" content="Milos Jovanov">
-		
-		<link rel="stylesheet" href="static/css/style.css">
-		
-		<!--[if lt IE 9]>
-			<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
-		<![endif]-->
-		</head>
-		
-		<body>
-		 	<div class="content">
-				<form method="post">
-					<h4>Calculator</h4>
-					<p>Allowed operators are '+', '-', '*' and '/'"</p>
-					<p>Syntax: number operator number</p>
-					<p>Examples: "5 + 5", "5 - 5", "5 * 5" and "5 / 5" </p>
-					<input name="expression" value="{{ if .Expr }} {{ .Expr }} {{ end }}" type="text" required>
-					<input type="submit" value="Calculate">
-				</form>
-				{{ if .Result }}<h4>Result: {{ .Result }}</h4>{{ end }}
-			</div>
-		</body>
-		</html>`
-
-	// set the encoding
-	w.Header().Add("Content-type", "text/html")
-
-	// validate the method
-	if r.Method != http.MethodPost && r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	result := ""
-	if r.FormValue("expression") != "" {
-		result = calculator.Calculate(r.FormValue("expression"))
-	}
-
-	// prepare the data
-	data := struct {
-		Result string
-		Expr   string
-	}{
-		Result: result,
-		Expr:   r.FormValue("expression"),
-	}
-
-	// parse the template
-	t, err := template.New("form").Parse(tmpl)
-	if err != nil {
-		fmt.Println("Failed to parse template;", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	t.Execute(w, data)
-}
-
-func startServer(address string) {
-	http.Handle("/api/calculate", &apiHandler{})
-	http.HandleFunc("/calculate", htmlHandler)
-
+func startServer(address string, handler http.Handler) {
 	//Load css
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
 	fmt.Println("Starting server on http://" + address)
-	http.ListenAndServe(address, nil)
+	http.ListenAndServe(address, handler)
 }
 
 func main() {
-	var addr = flag.String("addr", "", "Interface and port to listen on")
+	var addr = flag.String("addr", "0.0.0.0:8080", "Interface and port to listen on")
 
 	// parse the flags
 	flag.Parse()
 
-	if *addr != "" {
-		startServer(*addr)
-	} else {
-		startServer("0.0.0.0:8080")
-	}
+	service := calculator.New()
+
+	endpoint := calculator.MakeEndpoint(service)
+
+	handler := calculator.NewHTTPHandler(endpoint)
+
+	startServer(*addr, handler)
+
 }

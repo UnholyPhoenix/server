@@ -20,9 +20,11 @@ func main() {
 	// parse the flags
 	flag.Parse()
 
+	kv := calculator.NewMemoryStorage()
+
 	service := calculator.New()
 
-	endpoint := calculator.MakeEndpoint(service)
+	endpoint := calculator.MakeEndpoint(service, kv)
 
 	handler := calculator.NewHTTPHandler(endpoint)
 

@@ -57,10 +57,14 @@ func encodeHTMLResponse(_ context.Context, w http.ResponseWriter, response inter
 				<p>Allowed operators are '+', '-', '*' and '/'"</p>
 				<p>Syntax: number operator number</p>
 				<p>Examples: "5 + 5", "5 - 5", "5 * 5" and "5 / 5" </p>
+				<hr>
+				<p>$0,$1 can be also used where the number is the order of previus calculation.</p>
+				<p>Examples: After we calculate"5 + 5", "5 - 5", we can use $1 - $2 and we would get expression "10 - 0"</p>
 				<input name="expression" value="{{ if .Expr }} {{ .Expr }} {{ end }}" type="text" required>
 				<input type="submit" value="Calculate">
 			</form>
 			{{ if .Result }}<h4>Result: {{ .Result }}</h4>{{ end }}
+			{{ if .Error }}<h4>Error: {{ .Error }}</h4>{{ end }}
 		</div>
 	</body>
 	</html>`

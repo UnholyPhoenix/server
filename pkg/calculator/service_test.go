@@ -7,6 +7,7 @@ import (
 
 func TestService(t *testing.T) {
 	service := New()
+	kv := NewMemoryStorage()
 
 	tests := []struct {
 		name        string
@@ -45,6 +46,12 @@ func TestService(t *testing.T) {
 			nil,
 		},
 		{
+			"Expression for memory test",
+			"$1 - $2",
+			10.00,
+			nil,
+		},
+		{
 			"Expression with wrong method",
 			"10 | 5",
 			0.0,
@@ -58,9 +65,13 @@ func TestService(t *testing.T) {
 		},
 	}
 
+	// Fill memory
+	kv.Add(15)
+	kv.Add(5)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := service.Evaluate(tt.requestExpr)
+			result, err := service.Evaluate(tt.requestExpr, kv)
 			if expect, got, gotError := tt.result, result, err; expect != got {
 				t.Errorf("expected '%v', got '%v', error '%v'", expect, got, gotError)
 			}

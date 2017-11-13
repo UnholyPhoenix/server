@@ -11,13 +11,14 @@ import (
 
 type mockService struct{}
 
-func (s mockService) Evaluate(expression string) (float64, error) {
+func (s mockService) Evaluate(expression string, kv *KV) (float64, error) {
 	return 0.0, nil
 }
 
 func TestEndpoint(t *testing.T) {
 	service := mockService{}
-	endpoint := MakeEndpoint(service)
+	kv := NewMemoryStorage()
+	endpoint := MakeEndpoint(service, kv)
 
 	tests := []struct {
 		name        string
@@ -64,7 +65,8 @@ func TestEndpointLogging(t *testing.T) {
 	logger := log.NewLogfmtLogger(buf)
 
 	service := mockService{}
-	endpoint := EndpointLoggingMiddleware(logger)(MakeEndpoint(service))
+	kv := NewMemoryStorage()
+	endpoint := EndpointLoggingMiddleware(logger)(MakeEndpoint(service, kv))
 
 	req := Request{}
 

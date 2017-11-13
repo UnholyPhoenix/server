@@ -22,12 +22,12 @@ type validateMiddleware struct {
 	next Service
 }
 
-func (mw validateMiddleware) Evaluate(expression string) (float64, error) {
+func (mw validateMiddleware) Evaluate(expression string, kv *KV) (float64, error) {
 	if expression == "" {
 		return 0, nil
 	}
 
-	return mw.next.Evaluate(expression)
+	return mw.next.Evaluate(expression, kv)
 }
 
 // ServiceLoggingMiddleware is a validator middleware for service
@@ -42,8 +42,8 @@ type loggingMiddleware struct {
 	next   Service
 }
 
-func (mw loggingMiddleware) Evaluate(expression string) (float64, error) {
-	result, err := mw.next.Evaluate(expression)
+func (mw loggingMiddleware) Evaluate(expression string, kv *KV) (float64, error) {
+	result, err := mw.next.Evaluate(expression, kv)
 	mw.logger.Log("method", "Evaluate", "expression", expression, "result", result)
 	return result, err
 }

@@ -13,3 +13,10 @@ Result: 2800.00
 Allowed operatorsr are '+', '-', '*' in '/'.  
 Syntax: number operator number  
 
+### Added memory to calculator
+
+New syntax allowed which contains $Number. Number is result value from previus result.
+
+Example : 
+If we put "10 + 5", "10 - 5" and calculate it we can use $1 - $2 whcih transaltes to "15 - 5".
+
